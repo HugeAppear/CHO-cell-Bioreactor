@@ -26,8 +26,6 @@ def get_batch(csv_filename):
 
 batches = get_batch('in_silico_experiments.csv')
 
-
-
 # Constants
 mu_max, k_d = 0.029, 0.016  # h^-1
 Y_Xv_glc, Y_Xv_gln = 1.69e8, 9.74e8  # cell/mmol
@@ -84,45 +82,45 @@ popt = []
 for k in range(78):
     try:
         if k == 0:
-            popt, pcov = curve_fit(mechanistical_model, batches[k], batches[k][1:, 1:7].T.flatten(), p0=init_params)
+            popt, pcov = curve_fit(mechanistical_model, batches[k], batches[k][:, 1:7].T.flatten(), p0=init_params)
             popt = popt[:,np.newaxis]
         else:
-            popt_other, pcov = curve_fit(mechanistical_model, batches[k], batches[k][1:, 1:7].T.flatten(), p0=init_params,\
-                                   bounds=([0.01, 0.01, 30, 5, 40, 5, 50e-12 * 24, 1e-12 * 24, 1, 5e-3 * 24, 0.01e-12 * 24, 0.001e-12 * 24],
-                                           [0.2, 0.2, 70, 20, 70, 20, 90e-12 * 24, 10e-12 * 24, 10, 20e-3 * 24, 20e-12 * 24, 10e-12 * 24]))
+            popt_other, pcov = curve_fit(mechanistical_model, batches[k], batches[k][:, 1:7].T.flatten(), p0=init_params,\
+                                   bounds=((0.01, 0.2), (0.01, 0.2), (30, 70), (5, 20), (40, 70), (5, 20), (50e-12 * 24, 90e-12 * 24), (1e-12 * 24, 10e-12 * 24), \
+                                           (1, 10), (5e-3 * 24, 20e-3 * 24), (0.01e-12 * 24, 20e-12 * 24), (0.001e-12 * 24, 10e-12 * 24)))
             popt = np.concatenate((popt, popt_other[:,np.newaxis]), axis=1)
         print(f'{k+1}th :', popt[:,-1].T)
     except:
         continue
-popt = np.mean(popt)
+# popt = np.mean(popt)
 
 print('final params values:', popt)
 
 
-def get_mse(diff):
-    return np.mean(np.square(diff), axis=1)
-
-for k in range(78, 86):
-    labels = (batches[k][1:][1:7]).T
-    preds = mechanistical_model(batches[k], *popt).reshape(5, 14)
-    difference = preds - labels
-    if k == 78:
-        diff_list = difference
-    else:
-        diff_list = np.concatenate((diff_list, difference), axis=1)
-
-mse = get_mse(diff_list)
-rmse = np.sqrt(mse)
-order = ['Xv', 'GLC', 'GLN', 'AMM', 'LAC', 'P']
-print('total loss :', np.sum(mse))
-
-print('<MSE>')
-for l in range(len(mse)):
-    print(order[l], ':', mse[l])
-
-print('<RMSE>')
-for l in range(len(rmse)):
-    print(order[l], ':', rmse[l])
+# def get_mse(diff):
+#     return np.mean(np.square(diff), axis=1)
+#
+# for k in range(78, 86):
+#     labels = (batches[k][1:][1:7]).T
+#     preds = mechanistical_model(batches[k], *popt).reshape(5, 14)
+#     difference = preds - labels
+#     if k == 78:
+#         diff_list = difference
+#     else:
+#         diff_list = np.concatenate((diff_list, difference), axis=1)
+#
+# mse = get_mse(diff_list)
+# rmse = np.sqrt(mse)
+# order = ['Xv', 'GLC', 'GLN', 'AMM', 'LAC', 'P']
+# print('total loss :', np.sum(mse))
+#
+# print('<MSE>')
+# for l in range(len(mse)):
+#     print(order[l], ':', mse[l])
+#
+# print('<RMSE>')
+# for l in range(len(rmse)):
+#     print(order[l], ':', rmse[l])
 
 
 
